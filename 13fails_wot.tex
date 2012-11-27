@@ -1,0 +1,354 @@
+\documentclass{beamer}
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  \useoutertheme{miniframes}
+  \setbeamercovered{transparent}
+}
+
+\usepackage[english,russian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\title[World of Tanks: Мировая Война]{World of Tanks\\13 "фейлов" при разработке Мировой Войны}
+\author{Максим 'max\_posedon' Мельников}
+\institute{Wargaming.net}
+\date[КРИ 2011]{Конференция Разработчиков Игр 2011}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Содержание}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+\section{Архитектура}
+\begin{frame}{1. Мировая Война в World of Tanks}
+    \begin{block}{Некоторые факты о Мировой Войне}
+        \begin{itemize}
+            \item{пошаговая стратегия, про передвижение фишек, сражения с противником и захватом территорий}
+            \item{МВ работает в браузере, а бои в клиенте}
+            \item{новая версия: расширение в 4 раза}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Глоссарий}
+        \begin{itemize}
+            \item{движок - сервер+клиент, основанные на BigWorld}
+            \item{клиент - клиентская часть WOT}
+            \item{сервер - серверная часть WOT}
+            \item{web - web составляющая игры: Мировая Война, турниры}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{2. Движок игры как чёрный ящик}
+    \begin{block}{World of Tanks и Мировая Война}
+        \begin{itemize}
+            \item{независимость}
+            \item{доступность}
+            \item{минимизация рисков}
+        \end{itemize}
+    \end{block}
+     
+    \pause
+    \begin{block}{LAMP}
+        \begin{itemize}
+            \item просто
+            \item стабильно
+            \item огромный опыт
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{3. Экспорт данных}
+    \begin{columns}
+        \column{.45\textwidth}
+            \begin{block}{BigWorld}
+                \begin{itemize}
+                    \item{аккаунты}
+                    \item{кланы}
+                    \item{результаты боёв}
+                \end{itemize}
+            \end{block}
+
+            \pause
+            \begin{block}{AMQP}
+                \begin{itemize}
+                    \item{RabbitMQ}
+                    \item{доработка движка}
+                    \item{осенью отказались}
+                    \item{весной реализовали}
+                \end{itemize}
+            \end{block}
+ 
+        \column{.45\textwidth}
+            \pause
+            \begin{block}{MySQL}
+                \begin{enumerate}
+                    \item{BigWorld}
+                    \item{MySQL(export\_queue)}
+                    \item{RabbitMQ}
+                    \item{обработка}
+                    \item{MySQL(highlevel\_*)}
+                    \item{расчёт рейтингов}
+                \end{enumerate}
+            \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{4. Управление движком}
+    \begin{block}{Сервер}
+        \begin{itemize}
+            \item управление аккаунтом
+            \item управление кланом
+            \item создание боёв
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{BigWorld WebIntegration}
+        \begin{itemize}
+            \item синхронный подход
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{AMQP}
+        \begin{itemize}
+            \item асинхронный подход
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\section{Проблемы и их решения}
+\begin{frame}{5. FAIL: синхронизация данных в движке и в web-е}
+    \begin{block}{Информация о пользователе}
+        \begin{itemize}
+            \item{обновляется при выходе из клиента}
+            \item{не обновлялась при платеже}
+        \end{itemize}
+    \end{block}
+    
+    \begin{columns}
+        \pause
+        \column{.45\textwidth}
+            \begin{block}{Старый подход}
+                \begin{enumerate}
+                    \item{приходит платёж}
+                    \item{сохраняется в таблице}
+                    \item{пользователь заходит}
+                    \item{начисляется золото}
+                    \item{пользователь выходит}
+                    \item{экспорт данных}
+                \end{enumerate}
+            \end{block}
+
+        \column{.45\textwidth}
+            \pause
+            \begin{block}{Новый подход}
+                 \begin{enumerate}
+                    \item{приходит платёж}
+                    \item{сохраняется в таблице}
+                    \item{начисляется золото}
+                    \item{экспорт данных}
+                \end{enumerate}
+             \end{block}
+
+            \pause
+            \begin{block}{Опасность}
+                \begin{itemize}
+                    \item{DDOS}
+                \end{itemize}
+            \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{6. FAIL: Боевое API не готово}
+    \begin{block}{Особенности разработки}
+        \begin{itemize}
+            \item{Мировая Война разрабатывается независимо}
+            \item{функционал МВ не зависит от сервера}
+        \end{itemize}
+    \end{block}
+    
+    \begin{columns}
+        \column{.45\textwidth}
+            \pause
+            \begin{block}{Обходной путь}
+                \begin{itemize}
+                    \item{турниры в ручном режиме}
+                    \item{альфа тест Мировой Войны без BigWorld}
+                \end{itemize}
+            \end{block}
+
+        \column{.45\textwidth}
+            \pause
+            \begin{block}{Решение}
+                \begin{enumerate}
+                    \item{API готов в декабре}
+                    \item{интеграция Мировой Войны с BigWorld}
+                \end{enumerate}
+             \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{7. Мировая Война: используемые технологии}
+    \begin{block}{Languages \& Tools}
+        \begin{itemize}
+            \item{OS: Linux (Centos)}
+            \item{Web Server: nginx, mod\_wsgi(apache)}
+            \item{Language: Python, Django, amqplib, jinja2, PIL, ...}
+            \item{Storage: MySQL, RabbitMQ, memcached}
+            \item{Web: HTML, CSS, jQuery, SVG}
+            \item{BigWorld: Web Integration (python)}
+            \item{...}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{8. FAIL: 504 Gateway Timeout}
+    \begin{columns}
+        \column{.475\textwidth}
+            \begin{block}{Нагрузка на сервер}
+                \begin{itemize}
+                    \item{бои: 700/день}
+                    \item{участники: 20'000/день}
+                    \item{посетители: 50'000/день}
+                    \item{посещения: 100'000/день}
+                    \item{страницы: 465'000/день}
+                    \item{динамика: 1'500'000/день}
+                    \item{статика: 15'000'000/день}
+                \end{itemize}
+            \end{block}
+
+        \pause
+        \column{.575\textwidth}
+            \begin{block}{Архитектура}
+                \begin{itemize}
+                    \item{frontend: nginx}
+                    \item{nginx: workers=24}
+                    \item{nginx: epoll, sendfile}
+                    \item{nginx: gzip backend}
+                    \item{backend: Apache(mod\_wsgi)}
+                    \item{mod\_wsgi: Django}
+                    \item{mod\_wsgi: workers=24}
+                    \item{Django -> MySQL, RabbitMQ}
+                    \item{RabbitMQ, MySQL -> BigWorld}
+                \end{itemize}
+            \end{block}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{9. FAIL: надежда на стабильность движка}
+    \begin{block}{Старый подход}
+        \begin{itemize}
+            \item{отсутствие корректной обработки исключительных ситуаций в движке}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Новый подход}
+        \begin{itemize}
+            \item{полная изоляция всех запросов в движок}
+            \item{retry, везде где это возможно и имеет смысл}
+            \item{самоконтроль и самовосстановление системы}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{10. FAIL: не уследили за ростом}
+    \begin{block}{Ошибки}
+        \begin{itemize}
+            \item{не угадали скорость роста нагрузки}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Выводы}
+        \begin{itemize}
+            \item{при реализации нужно накапливать данные о том, какие компоненты выдерживают какие нагрузки}
+            \item{планировать 10 кратный рост}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+
+\begin{frame}{11. FAIL: multi-язычность}
+    \begin{block}{Проблемы локализации Мировой Войны}
+        \begin{itemize}
+            \item{один сервер - много языков}
+            \item{описания боёв на родном языке для клиенте}
+            \item{движок игры не должен знать про web}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Используемый подход}
+        \begin{itemize}
+            \item{gettext в клиенте и в web-е}
+            \item{веб содержит все тексты и локализационные файлы}
+            \item{на сервер передаются тексты на всех языках}
+            \item{клиент получает данные тока на одном языке}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+
+\begin{frame}{12. FAIL: Интернациолизация}
+    \begin{block}{Проблемы интернациолизации Мировой Войны}
+        \begin{itemize}
+            \item{несколько серверов - различные пользователи}
+            \item{несколько часовых поясов на сервер}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Решение проблемы}
+        \begin{itemize}
+            \item{добавить поддержку часовых поясов}
+            \item{разделить мир на регионы}
+            \item{общие данные на всех серверах}
+            \item{опциональное отключение регионов}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\section{Дальнейшее развитие}
+\begin{frame}{13. Будущее Мировой Войны}
+    \begin{block}{Пользователи хотят}
+        \begin{itemize}
+            \item{дипломатию}
+            \item{экономику}
+            \item{наёмников}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Пользователи получат}
+        \begin{itemize}
+            \item{fun, какой именно - будет ясно после расширения}
+        \end{itemize}
+    \end{block}
+
+    \pause
+    \begin{block}{Программисты получат}
+        \begin{itemize}
+            \item{интересный высоконагруженный проект}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{}
+    \begin{block}{Вопросы?}
+    Максим Мельников <m\_melnikau@wargaming.net>
+    \end{block}
+\end{frame}
+
+\end{document}
